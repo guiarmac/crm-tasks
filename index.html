@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tasks — armac</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F3EE;--surface:#FFF;--surface2:#ECEAE5;--border:rgba(0,0,0,.09);--border-md:rgba(0,0,0,.16);
+  --text:#1A1916;--text-2:#6B6860;--text-3:#A8A69F;--accent:#1A1916;--accent-fg:#F5F3EE;
+  --red:#B83232;--red-bg:#FDF0F0;--amber:#8F6200;--amber-bg:#FDF7EC;--green:#1A6E3E;--green-bg:#EEF8F3;--blue:#1558A0;--blue-bg:#EDF3FB;
+  --purple:#6B3FA0;--purple-bg:#F3EEFB;
+  --r:10px;--r-sm:6px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111110;--surface:#1C1C1A;--surface2:#242422;--border:rgba(255,255,255,.07);--border-md:rgba(255,255,255,.14);
+  --text:#EFECE7;--text-2:#98958F;--text-3:#55534C;--accent:#EFECE7;--accent-fg:#111110;
+  --red:#E07070;--red-bg:#2A1414;--amber:#D4A040;--amber-bg:#251C0A;--green:#52A876;--green-bg:#0D2018;--blue:#5B96D8;--blue-bg:#0E1C2E;
+  --purple:#C084FC;--purple-bg:#1E1228;
+}}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);padding:36px 32px;width:100%;max-width:360px}
+.login-title{font-family:var(--mono);font-size:15px;font-weight:400;letter-spacing:-.01em;margin-bottom:6px}
+.login-title em{color:var(--text-3);font-style:normal}
+.login-subtitle{font-family:var(--mono);font-size:11px;color:var(--text-3);margin-bottom:28px}
+.login-field{width:100%;padding:9px 12px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s;display:block;margin-bottom:10px}
+.login-field:focus{border-color:var(--accent)}
+.login-field::placeholder{color:var(--text-3)}
+.login-error{font-family:var(--mono);font-size:11px;color:var(--red);margin-bottom:10px;min-height:16px}
+.login-btn{width:100%;padding:10px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:var(--r-sm);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.login-btn:hover{opacity:.82}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* APP */
+#app{max-width:1400px;margin:0 auto;padding:24px;display:none}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.hdr-title{font-family:var(--mono);font-size:15px;font-weight:400;letter-spacing:-.01em}
+.hdr-title em{color:var(--text-3);font-style:normal}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.board-stat{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.hdr-email{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.btn-logout{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border-md);background:transparent;color:var(--text-2);cursor:pointer;transition:all .1s;white-space:nowrap}
+.btn-logout:hover{color:var(--text);border-color:var(--text-2)}
+.btn-export{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:var(--r-sm);border:1px solid var(--border-md);background:transparent;color:var(--text-2);cursor:pointer;transition:all .1s;white-space:nowrap}
+.btn-export:hover{color:var(--text);border-color:var(--text-2)}
+.add-form{background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);padding:16px 18px;margin-bottom:20px}
+.form-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.form-row input{flex:1;padding:9px 12px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s}
+.form-row input:focus{border-color:var(--accent)}
+.form-row input::placeholder{color:var(--text-3)}
+.btn-add{padding:9px 18px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:var(--r-sm);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.btn-add:hover{opacity:.82}
+.form-meta{display:flex;gap:20px;flex-wrap:wrap}
+.meta-group{display:flex;flex-direction:column;gap:6px}
+.meta-label{font-size:10px;font-family:var(--mono);color:var(--text-3);letter-spacing:.06em;text-transform:uppercase}
+.meta-pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;border:1px solid var(--border-md);background:transparent;color:var(--text-2);cursor:pointer;transition:all .1s;white-space:nowrap}
+.pill:hover{color:var(--text);border-color:var(--text-2)}
+.pill.on-cat{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.pill.on-alta{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.pill.on-media{background:var(--amber-bg);color:var(--amber);border-color:var(--amber)}
+.pill.on-baixa{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.pill.on-resp{background:var(--purple-bg);color:var(--purple);border-color:var(--purple)}
+
+/* FILTERS */
+.filters-wrap{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.filters{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.filter-btn{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:20px;border:1px solid var(--border-md);background:transparent;color:var(--text-2);cursor:pointer;transition:all .1s;white-space:nowrap}
+.filter-btn:hover{color:var(--text)}
+.filter-btn.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.filter-sep{width:1px;background:var(--border-md);margin:2px 3px;align-self:stretch}
+.btn-clear-filter{font-size:11px;font-family:var(--mono);padding:3px 10px;border-radius:20px;border:1px solid var(--red);color:var(--red);background:transparent;cursor:pointer;white-space:nowrap;display:none;transition:all .1s}
+.btn-clear-filter:hover{background:var(--red-bg)}
+.btn-clear-filter.show{display:inline-flex;align-items:center;gap:4px}
+
+/* BOARD */
+.board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.col{background:var(--surface2);border-radius:var(--r);padding:11px;min-height:260px;transition:background .15s}
+.col.drag-over{background:color-mix(in srgb,var(--surface2) 60%,var(--blue) 40%)}
+.col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
+.col-title{font-size:10px;font-family:var(--mono);font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)}
+.col-cnt{font-size:10px;font-family:var(--mono);color:var(--text-3);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 7px}
+
+/* TASK CARD */
+.task{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-bottom:5px;cursor:grab;transition:border-color .12s,transform .1s,opacity .15s,box-shadow .15s;user-select:none}
+.task:hover{border-color:var(--border-md);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.task:active{cursor:grabbing}
+.task.dragging{opacity:.4;transform:scale(.98)}
+.task-title{font-size:13px;color:var(--text);line-height:1.4;margin-bottom:5px}
+.task-desc-preview{font-size:11px;color:var(--text-3);line-height:1.4;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
+.task-foot{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.tag{font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:20px;white-space:nowrap}
+.tag-cat{background:var(--blue-bg);color:var(--blue)}
+.tag-resp{background:var(--purple-bg);color:var(--purple)}
+.prio-badge{font-size:9px;font-family:var(--mono);font-weight:500;padding:1px 6px;border-radius:20px;white-space:nowrap;letter-spacing:.03em}
+.prio-alta{background:var(--red-bg);color:var(--red)}
+.prio-media{background:var(--amber-bg);color:var(--amber)}
+.prio-baixa{background:var(--green-bg);color:var(--green)}
+.date-badge{font-size:10px;font-family:var(--mono);color:var(--text-3);white-space:nowrap}
+.date-badge.overdue{color:var(--red)}
+.date-badge.soon{color:var(--amber)}
+.col-empty{font-size:12px;font-family:var(--mono);color:var(--text-3);text-align:center;padding:28px 0}
+
+/* AVATARS */
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:600;font-family:var(--mono);color:#fff;flex-shrink:0;border:1.5px solid var(--surface)}
+.av-g{background:#5B7FA6}.av-ge{background:#7A5FA6}.av-s{background:#A65F7A}.av-k{background:#A6835F}.av-n{background:#5FA688}
+
+/* CTX MENU */
+#ctx{position:fixed;background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r-sm);padding:4px;z-index:9999;min-width:172px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+#ctx.show{display:block}
+.ctx-section{padding:5px 10px 2px;font-size:10px;font-family:var(--mono);color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
+.ctx-item{padding:7px 10px;font-size:13px;cursor:pointer;border-radius:4px;color:var(--text);transition:background .1s}
+.ctx-item:hover{background:var(--surface2)}
+.ctx-item.danger{color:var(--red)}
+.ctx-sep{height:1px;background:var(--border);margin:3px 0}
+
+/* DETAIL MODAL */
+#detail-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-start;justify-content:center;z-index:9998;padding:2rem 1rem;overflow-y:auto}
+#detail-bg.show{display:flex}
+.detail-modal{background:var(--surface);border:1px solid var(--border-md);border-radius:var(--r);width:100%;max-width:580px;margin:auto;overflow:hidden}
+.detail-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
+.detail-header-main{flex:1;min-width:0}
+.detail-titulo{font-size:17px;font-weight:500;line-height:1.3;color:var(--text);margin-bottom:8px;outline:none;width:100%;border:1px solid transparent;background:transparent;font-family:var(--font);resize:none;border-radius:4px;padding:2px 4px;transition:border-color .15s;cursor:text;user-select:text}
+.detail-titulo:hover{border-color:var(--border-md)}
+.detail-titulo:focus{outline:none;border-color:var(--accent)}
+.detail-meta-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 4px}
+.detail-close{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;padding:2px 6px;border-radius:4px;flex-shrink:0;line-height:1}
+.detail-close:hover{color:var(--text);background:var(--surface2)}
+.detail-body{padding:18px 20px}
+.detail-section{margin-bottom:20px}
+.detail-section-label{font-size:10px;font-family:var(--mono);color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:block}
+.detail-desc{width:100%;min-height:80px;padding:10px 12px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.6;outline:none;resize:vertical}
+.detail-desc:focus{border-color:var(--accent)}
+.detail-desc::placeholder{color:var(--text-3)}
+.detail-select{padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;outline:none;cursor:pointer}
+.detail-select:focus{border-color:var(--accent)}
+.detail-date-input{padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:100%}
+.detail-date-input:focus{border-color:var(--accent)}
+.checklist{margin-bottom:6px}
+.check-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.check-item:last-child{border-bottom:none}
+.check-item input[type="checkbox"]{width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+.check-item-text{flex:1;font-size:13px;color:var(--text);outline:none;border:none;background:transparent;font-family:var(--font)}
+.check-item-text.done{text-decoration:line-through;color:var(--text-3)}
+.check-item-del{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:14px;padding:0 4px;opacity:0;transition:opacity .1s}
+.check-item:hover .check-item-del{opacity:1}
+.check-item-del:hover{color:var(--red)}
+.add-check-row{display:flex;gap:8px;margin-top:8px}
+.add-check-input{flex:1;padding:7px 10px;border:1px solid var(--border-md);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;outline:none}
+.add-check-input:focus{border-color:var(--accent)}
+.add-check-input::placeholder{color:var(--text-3)}
+.btn-add-check{padding:7px 12px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:var(--font)}
+.btn-add-check:hover{opacity:.82}
+.detail-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:var(--r-sm);border:1px solid var(--border-md);background:transparent;color:var(--text);cursor:pointer;font-family:var(--font);transition:background .1s}
+.btn-sm:hover{background:var(--surface2)}
+.btn-sm.save{border-color:var(--green);color:var(--green)}
+.btn-sm.save:hover{background:var(--green-bg)}
+.btn-sm.danger{border-color:var(--red);color:var(--red)}
+.btn-sm.danger:hover{background:var(--red-bg)}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--accent);color:var(--accent-fg);font-family:var(--mono);font-size:12px;padding:7px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10000;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:1200px){.board{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:900px){.board{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}.form-meta{flex-direction:column}}
+.col[data-status="cancelled"] .task{opacity:.55}
+.col[data-status="cancelled"] .task-title{text-decoration:line-through;color:var(--text-3)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-title">armac / <em>tasks</em></div>
+    <div class="login-subtitle">faça login para continuar</div>
+    <input type="email" id="login-email" class="login-field" placeholder="email" autocomplete="email">
+    <input type="password" id="login-password" class="login-field" placeholder="senha" autocomplete="current-password">
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-title">armac / <em>tasks</em></div>
+    <div class="hdr-right">
+      <span class="board-stat" id="stat"></span>
+      <span class="hdr-email" id="hdr-email"></span>
+      <button class="btn-export" onclick="exportTasks()">exportar</button>
+      <button class="btn-logout" onclick="doLogout()">sair</button>
+    </div>
+  </div>
+  <div class="add-form">
+    <div class="form-row">
+      <input type="text" id="titulo-input" placeholder="descreva a tarefa... (Enter para adicionar)" maxlength="120" autocomplete="off">
+      <button class="btn-add" onclick="addTask()">+ adicionar</button>
+    </div>
+    <div class="form-meta">
+      <div class="meta-group"><div class="meta-label">categorias</div><div class="meta-pills" id="cat-pills"></div></div>
+      <div class="meta-group"><div class="meta-label">prioridade</div><div class="meta-pills" id="prio-pills"></div></div>
+      <div class="meta-group"><div class="meta-label">responsáveis</div><div class="meta-pills" id="resp-pills"></div></div>
+    </div>
+  </div>
+  <div class="filters-wrap">
+    <input type="text" id="search-input" placeholder="🔍 buscar tarefas..." autocomplete="off" oninput="renderBoard()" style="padding:4px 12px;border:1px solid var(--border-md);border-radius:20px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;min-width:180px;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-md)'">
+    <div class="filters" id="filters"></div>
+    <button class="btn-clear-filter" id="btn-clear-filter" onclick="clearFilter()">✕ limpar filtro</button>
+  </div>
+  <div class="board">
+    <div class="col" id="drop-validacao" data-status="validacao"><div class="col-hdr"><span class="col-title">validação</span><span class="col-cnt" id="cnt-validacao">0</span></div><div id="col-validacao"></div><div class="col-empty" id="emp-validacao">—</div></div>
+    <div class="col" id="drop-backlog" data-status="backlog"><div class="col-hdr"><span class="col-title">backlog</span><span class="col-cnt" id="cnt-backlog">0</span></div><div id="col-backlog"></div><div class="col-empty" id="emp-backlog">—</div></div>
+    <div class="col" id="drop-ideacao" data-status="ideacao"><div class="col-hdr"><span class="col-title">ideação</span><span class="col-cnt" id="cnt-ideacao">0</span></div><div id="col-ideacao"></div><div class="col-empty" id="emp-ideacao">—</div></div>
+    <div class="col" id="drop-doing" data-status="doing"><div class="col-hdr"><span class="col-title">em andamento</span><span class="col-cnt" id="cnt-doing">0</span></div><div id="col-doing"></div><div class="col-empty" id="emp-doing">—</div></div>
+    <div class="col" id="drop-blocked" data-status="blocked"><div class="col-hdr"><span class="col-title">bloqueado</span><span class="col-cnt" id="cnt-blocked">0</span></div><div id="col-blocked"></div><div class="col-empty" id="emp-blocked">—</div></div>
+    <div class="col" id="drop-done" data-status="done"><div class="col-hdr"><span class="col-title">concluído</span><span class="col-cnt" id="cnt-done">0</span></div><div id="col-done"></div><div class="col-empty" id="emp-done">—</div></div>
+    <div class="col" id="drop-cancelled" data-status="cancelled"><div class="col-hdr"><span class="col-title">cancelado</span><span class="col-cnt" id="cnt-cancelled">0</span></div><div id="col-cancelled"></div><div class="col-empty" id="emp-cancelled">—</div></div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx">
+  <div class="ctx-section">mover para</div>
+  <div class="ctx-item" onclick="ctxMove('validacao')">validação</div>
+  <div class="ctx-item" onclick="ctxMove('backlog')">backlog</div>
+  <div class="ctx-item" onclick="ctxMove('ideacao')">ideação</div>
+  <div class="ctx-item" onclick="ctxMove('doing')">em andamento</div>
+  <div class="ctx-item" onclick="ctxMove('blocked')">bloqueado</div>
+  <div class="ctx-item" onclick="ctxMove('done')">concluído</div>
+  <div class="ctx-item" onclick="ctxMove('cancelled')">cancelado</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="openDetail(ctxId)">ver detalhes</div>
+  <div class="ctx-item danger" onclick="ctxDelete()">excluir</div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detail-bg">
+  <div class="detail-modal">
+    <div class="detail-header">
+      <div class="detail-header-main">
+        <textarea id="detail-titulo" class="detail-titulo" rows="1" maxlength="120" placeholder="título da tarefa"></textarea>
+        <div class="detail-meta-row" id="detail-meta-row"></div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <span class="detail-section-label">descrição</span>
+        <textarea id="detail-desc" class="detail-desc" placeholder="adicione mais contexto, links, observações..."></textarea>
+      </div>
+      <div class="detail-section">
+        <span class="detail-section-label">checklist</span>
+        <div class="checklist" id="checklist"></div>
+        <div class="add-check-row">
+          <input type="text" class="add-check-input" id="check-input" placeholder="novo item..." maxlength="200">
+          <button class="btn-add-check" onclick="addCheckItem()">+ item</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="detail-section" style="flex:1;min-width:120px">
+          <span class="detail-section-label">status</span>
+          <select class="detail-select" id="detail-status" style="width:100%">
+            <option value="validacao">validação</option>
+            <option value="backlog">backlog</option>
+            <option value="ideacao">ideação</option>
+            <option value="doing">em andamento</option>
+            <option value="blocked">bloqueado</option>
+            <option value="done">concluído</option>
+            <option value="cancelled">cancelado</option>
+          </select>
+        </div>
+        <div class="detail-section" style="flex:1;min-width:120px">
+          <span class="detail-section-label">prioridade</span>
+          <select class="detail-select" id="detail-prio" style="width:100%">
+            <option value="alta">alta</option>
+            <option value="media">média</option>
+            <option value="baixa">baixa</option>
+          </select>
+        </div>
+        <div class="detail-section" style="flex:1;min-width:140px">
+          <span class="detail-section-label">prazo</span>
+          <input type="date" class="detail-date-input" id="detail-date">
+        </div>
+      </div>
+      <div class="detail-section">
+        <span class="detail-section-label">categorias</span>
+        <div class="meta-pills" id="detail-cats"></div>
+      </div>
+      <div class="detail-section">
+        <span class="detail-section-label">responsáveis</span>
+        <div class="meta-pills" id="detail-resps"></div>
+      </div>
+    </div>
+    <div class="detail-footer">
+      <button class="btn-sm danger" onclick="detailDelete()">excluir tarefa</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" onclick="closeDetail()">cancelar</button>
+        <button class="btn-sm save" onclick="saveDetail()">salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── Supabase ────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ehczlprevqtgewydrgsp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_8BsnZm6UjeRTbi4hOR_4qw_gjPn33O9';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const CATS = ['CRM','Rental','Seminovos','Financeiro','Jurídico','Integrações','IA','Marketing','Pós-Venda','Pré-Vendas'];
+const RESPS = ['Guilherme','Geovany','Samara','Karine','Nexforce'];
+const RESP_AVATAR = {Guilherme:'av-g',Geovany:'av-ge',Samara:'av-s',Karine:'av-k',Nexforce:'av-n'};
+const RESP_INITIALS = {Guilherme:'GU',Geovany:'GE',Samara:'SA',Karine:'KA',Nexforce:'NX'};
+
+const SEED = [{"id":"t01","titulo":"novo fluxo inbound rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000001,"descricao":"","checklist":[],"prazo":""},{"id":"t02","titulo":"corrigir proposta comercial rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000002,"descricao":"","checklist":[],"prazo":""},{"id":"t03","titulo":"m&a braslift","categorias":["CRM"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"backlog","criado":1700000003,"descricao":"","checklist":[],"prazo":""},{"id":"t04","titulo":"lead & deal score","categorias":["Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000004,"descricao":"","checklist":[],"prazo":""},{"id":"t05","titulo":"reformular rfm","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000005,"descricao":"","checklist":[],"prazo":""},{"id":"t06","titulo":"atendimento IA - wave 2","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000006,"descricao":"","checklist":[],"prazo":""},{"id":"t07","titulo":"ativação goiânia (15/05)","categorias":["CRM","Seminovos","Rental","Marketing"],"prioridade":"media","responsaveis":["Guilherme","Samara"],"status":"backlog","criado":1700000007,"descricao":"","checklist":[],"prazo":"2025-05-15"},{"id":"t08","titulo":"scorecard crédito","categorias":["Financeiro","Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000008,"descricao":"","checklist":[],"prazo":""},{"id":"t09","titulo":"montar treinamento hubspot","categorias":["CRM","Rental","Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000009,"descricao":"","checklist":[],"prazo":""},{"id":"t10","titulo":"criação de pipeline para frota","categorias":["Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000010,"descricao":"","checklist":[],"prazo":""},{"id":"t11","titulo":"criação dash pré-vendas","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Geovany","Guilherme"],"status":"backlog","criado":1700000011,"descricao":"","checklist":[],"prazo":""},{"id":"t12","titulo":"aplicar plano de vôo no painel de carteiras","categorias":["CRM","Rental","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000012,"descricao":"","checklist":[],"prazo":""},{"id":"t13","titulo":"ajuste fluxo crédito e jurídico (grandes contas)","categorias":["CRM","Rental","Financeiro","Jurídico"],"prioridade":"media","responsaveis":["Samara"],"status":"backlog","criado":1700000013,"descricao":"gerar ticket do crédito e jurídico","checklist":[],"prazo":""},{"id":"t14","titulo":"incluir nps do painel de carteiras","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000014,"descricao":"","checklist":[],"prazo":""},{"id":"t15","titulo":"migrar painel de nps bi -> dominio armac","categorias":["CRM","Rental","Seminovos","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000015,"descricao":"","checklist":[],"prazo":""},{"id":"t16","titulo":"adicionar prospects carteira spot","categorias":["Rental"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000016,"descricao":"","checklist":[],"prazo":""},{"id":"t17","titulo":"atualização automática de preço médio","categorias":["Seminovos","CRM","Integrações"],"prioridade":"media","responsaveis":["Guilherme","Geovany"],"status":"backlog","criado":1700000017,"descricao":"","checklist":[],"prazo":""},{"id":"t18","titulo":"docusign","categorias":["CRM","Rental","Seminovos","Financeiro","Jurídico","Integrações"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"doing","criado":1700000018,"descricao":"","checklist":[],"prazo":""},{"id":"t19","titulo":"m&a termov","categorias":["CRM"],"prioridade":"alta","responsaveis":["Nexforce","Guilherme"],"status":"doing","criado":1700000019,"descricao":"","checklist":[],"prazo":""},{"id":"t20","titulo":"nps armac mai/26","categorias":["CRM"],"prioridade":"media","responsaveis":["Samara"],"status":"doing","criado":1700000020,"descricao":"","checklist":[],"prazo":""},{"id":"t21","titulo":"configuração acessos mario biolchini","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000021,"descricao":"","checklist":[],"prazo":""},{"id":"t22","titulo":"migrar empresas para o mario biolchini","categorias":["Rental","CRM"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000022,"descricao":"","checklist":[],"prazo":""}];
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let tasks = [], selCats = [], selPrio = 'alta', selResps = [], activeFilter = 'todos', ctxId = null, detailId = null, dragId = null;
+let dropSetup = false;
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'preencha email e senha'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'entrando...';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errEl.textContent = 'email ou senha inválidos';
+    btn.disabled = false;
+    btn.textContent = 'entrar';
+    return;
+  }
+
+  showApp(data.user);
+  await loadAndInit();
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  tasks = [];
+  selCats = []; selResps = []; activeFilter = 'todos';
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'entrar';
+  closeDetail();
+  closeCtx();
+}
+
+function showApp(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('hdr-email').textContent = user.email;
+}
+
+// ─── Data layer (Supabase) ────────────────────────────────────────────────────
+async function dbUpsert(task) {
+  const { error } = await db.from('tasks').upsert({ id: task.id, data: task, updated_at: new Date().toISOString() });
+  if (error) toast('erro ao salvar: ' + error.message);
+}
+
+async function dbDelete(id) {
+  const { error } = await db.from('tasks').delete().eq('id', id);
+  if (error) toast('erro ao excluir: ' + error.message);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    showApp(session.user);
+    await loadAndInit();
+  } else {
+    showLogin();
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) showLogin();
+  });
+
+  document.getElementById('login-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-password').focus();
+  });
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+}
+
+async function loadAndInit() {
+  const { data, error } = await db.from('tasks').select('*');
+
+  if (error) {
+    toast('erro ao carregar tarefas');
+    tasks = [];
+  } else if (data.length === 0) {
+    tasks = SEED.map(t => ({ ...t, descricao: t.descricao || '', checklist: t.checklist || [], prazo: t.prazo || '' }));
+    const rows = tasks.map(t => ({ id: t.id, data: t, updated_at: new Date().toISOString() }));
+    const { error: seedErr } = await db.from('tasks').insert(rows);
+    if (seedErr) toast('erro ao inserir seed: ' + seedErr.message);
+  } else {
+    tasks = data.map(row => row.data);
+  }
+
+  buildCatPills();
+  buildPrioPills();
+  buildRespPills('resp-pills', selResps, 'form');
+  buildFilters();
+  renderBoard();
+
+  if (!dropSetup) {
+    dropSetup = true;
+    setupDrop();
+    document.getElementById('titulo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+    document.getElementById('check-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCheckItem(); });
+    const ta = document.getElementById('detail-titulo');
+    ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ─── Form pills ───────────────────────────────────────────────────────────────
+function buildCatPills() {
+  const w = document.getElementById('cat-pills'); w.innerHTML = '';
+  CATS.forEach(c => {
+    const b = document.createElement('button'); b.className = 'pill'; b.textContent = c;
+    b.onclick = () => { selCats.includes(c) ? (selCats = selCats.filter(x => x !== c), b.classList.remove('on-cat')) : (selCats.push(c), b.classList.add('on-cat')); };
+    w.appendChild(b);
+  });
+}
+
+function buildPrioPills() {
+  const w = document.getElementById('prio-pills'); w.innerHTML = '';
+  [['alta','alta'],['media','média'],['baixa','baixa']].forEach(([p, label]) => {
+    const b = document.createElement('button'); b.className = 'pill' + (p === selPrio ? ' on-' + p : ''); b.textContent = label; b.dataset.prio = p;
+    b.onclick = () => { selPrio = p; document.querySelectorAll('#prio-pills .pill').forEach(x => x.className = 'pill' + (x.dataset.prio === p ? ' on-' + p : '')); };
+    w.appendChild(b);
+  });
+}
+
+function buildRespPills(containerId, selectedArr, mode) {
+  const w = document.getElementById(containerId); w.innerHTML = '';
+  RESPS.forEach(r => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (selectedArr.includes(r) ? ' on-resp' : ''); b.textContent = r;
+    b.onclick = () => {
+      if (mode === 'form') { const idx = selResps.indexOf(r); idx > -1 ? (selResps.splice(idx, 1), b.classList.remove('on-resp')) : (selResps.push(r), b.classList.add('on-resp')); }
+      else { b.classList.toggle('on-resp'); }
+    };
+    w.appendChild(b);
+  });
+}
+
+// ─── Add task ─────────────────────────────────────────────────────────────────
+async function addTask() {
+  const titulo = document.getElementById('titulo-input').value.trim();
+  if (!titulo) { document.getElementById('titulo-input').focus(); return; }
+  const t = { id: uid(), titulo, categorias: [...selCats], prioridade: selPrio, responsaveis: [...selResps], status: 'validacao', criado: Date.now(), descricao: '', checklist: [], prazo: '' };
+  tasks.push(t);
+  document.getElementById('titulo-input').value = ''; selCats = []; selResps = [];
+  buildCatPills(); buildRespPills('resp-pills', selResps, 'form');
+  renderBoard(); toast('tarefa adicionada');
+  await dbUpsert(t);
+}
+
+// ─── Filters ──────────────────────────────────────────────────────────────────
+function buildFilters() {
+  const w = document.getElementById('filters'); w.innerHTML = '';
+  const mkBtn = (label, cat) => {
+    const b = document.createElement('button'); b.className = 'filter-btn' + (activeFilter === cat ? ' active' : ''); b.textContent = label; b.dataset.cat = cat;
+    b.onclick = () => setFilter(cat); w.appendChild(b);
+  };
+  mkBtn('todos', 'todos');
+  CATS.forEach(c => mkBtn(c, c));
+  const sep = document.createElement('span'); sep.className = 'filter-sep'; w.appendChild(sep);
+  RESPS.forEach(r => mkBtn(r, '@' + r));
+}
+
+function setFilter(cat) {
+  if (activeFilter === cat) { clearFilter(); return; }
+  activeFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  document.getElementById('btn-clear-filter').classList.toggle('show', cat !== 'todos');
+  renderBoard();
+}
+
+function clearFilter() {
+  activeFilter = 'todos';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === 'todos'));
+  document.getElementById('btn-clear-filter').classList.remove('show');
+  renderBoard();
+}
+
+function fuzzyMatch(str, query) {
+  if (!query) return true;
+  str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  query = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let si = 0;
+  for (let qi = 0; qi < query.length; qi++) { const idx = str.indexOf(query[qi], si); if (idx === -1) return false; si = idx + 1; }
+  return true;
+}
+
+function filtered() {
+  const query = (document.getElementById('search-input')?.value || '').trim();
+  let base = activeFilter === 'todos' ? tasks : activeFilter.startsWith('@') ? tasks.filter(t => t.responsaveis?.includes(activeFilter.slice(1))) : tasks.filter(t => t.categorias?.includes(activeFilter));
+  if (!query) return base;
+  return base.filter(t => fuzzyMatch(t.titulo, query) || fuzzyMatch((t.descricao || ''), query) || (t.categorias || []).some(c => fuzzyMatch(c, query)) || (t.responsaveis || []).some(r => fuzzyMatch(r, query)));
+}
+
+// ─── Board render ─────────────────────────────────────────────────────────────
+function dateBadge(prazo) {
+  if (!prazo) return '';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d = new Date(prazo + 'T00:00:00');
+  const diff = Math.round((d - today) / (1000 * 60 * 60 * 24));
+  const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  if (diff < 0) return `<span class="date-badge overdue">⚠ ${label}</span>`;
+  if (diff <= 3) return `<span class="date-badge soon">◷ ${label}</span>`;
+  return `<span class="date-badge">◷ ${label}</span>`;
+}
+
+function renderBoard() {
+  const cols = { validacao: [], ideacao: [], backlog: [], doing: [], blocked: [], done: [], cancelled: [] };
+  filtered().forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
+  Object.entries(cols).forEach(([status, items]) => {
+    const col = document.getElementById('col-' + status);
+    const emp = document.getElementById('emp-' + status);
+    document.getElementById('cnt-' + status).textContent = items.length;
+    col.innerHTML = ''; emp.style.display = items.length ? 'none' : 'block';
+    items.sort((a, b) => {
+      const da = a.prazo ? new Date(a.prazo + 'T00:00:00') : null;
+      const db = b.prazo ? new Date(b.prazo + 'T00:00:00') : null;
+      if (da && db) return da - db;
+      if (da) return -1;
+      if (db) return 1;
+      return (a.criado || 0) - (b.criado || 0);
+    });
+    items.forEach(t => col.appendChild(makeCard(t)));
+  });
+  const total = filtered().length;
+  document.getElementById('stat').textContent = total + ' tarefa' + (total !== 1 ? 's' : '');
+}
+
+function makeCard(t) {
+  const d = document.createElement('div'); d.className = 'task'; d.dataset.id = t.id; d.draggable = true;
+  d.addEventListener('click', e => { e.stopPropagation(); if (!d._dragged) openDetail(t.id); });
+  d.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showCtx(e, t.id); });
+  d.addEventListener('dragstart', e => { dragId = t.id; d._dragged = true; setTimeout(() => d.classList.add('dragging'), 0); e.dataTransfer.effectAllowed = 'move'; });
+  d.addEventListener('dragend', () => { d.classList.remove('dragging'); setTimeout(() => d._dragged = false, 100); });
+  const cats = (t.categorias || []).map(c => `<span class="tag tag-cat">${esc(c)}</span>`).join('');
+  const pc = { alta: 'prio-alta', media: 'prio-media', baixa: 'prio-baixa' }[t.prioridade] || 'prio-media';
+  const pl = { alta: '↑ alta', media: '→ média', baixa: '↓ baixa' }[t.prioridade] || 'média';
+  const checks = t.checklist || [];
+  const doneC = checks.filter(x => x.done).length;
+  const checkBadge = checks.length ? `<span class="date-badge">☑ ${doneC}/${checks.length}</span>` : '';
+  const descPrev = t.descricao ? `<div class="task-desc-preview">${esc(t.descricao.split('\n')[0])}</div>` : '';
+  const resps = t.responsaveis || [];
+  let avHtml = '';
+  if (resps.length) { avHtml = '<span style="display:inline-flex;margin-left:2px">'; resps.forEach((r, i) => { avHtml += `<span class="avatar ${RESP_AVATAR[r] || 'av-g'}" style="margin-left:${i === 0 ? 0 : -5}px" title="${r}">${RESP_INITIALS[r] || r[0]}</span>`; }); avHtml += '</span>'; }
+  const db2 = dateBadge(t.prazo);
+  d.innerHTML = `<div class="task-title">${esc(t.titulo)}</div>${descPrev}<div class="task-foot"><span class="prio-badge ${pc}">${pl}</span>${cats}${checkBadge}${db2}${avHtml}</div>`;
+  return d;
+}
+
+// ─── Drag & drop ──────────────────────────────────────────────────────────────
+function setupDrop() {
+  document.querySelectorAll('.col').forEach(col => {
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); e.dataTransfer.dropEffect = 'move'; });
+    col.addEventListener('dragleave', e => { if (!col.contains(e.relatedTarget)) col.classList.remove('drag-over'); });
+    col.addEventListener('drop', async e => {
+      e.preventDefault(); col.classList.remove('drag-over');
+      if (!dragId) return;
+      const status = col.dataset.status;
+      const t = tasks.find(x => x.id === dragId);
+      if (t && t.status !== status) { t.status = status; renderBoard(); toast('movido'); await dbUpsert(t); }
+      dragId = null;
+    });
+  });
+}
+
+// ─── Context menu ─────────────────────────────────────────────────────────────
+function showCtx(e, id) {
+  ctxId = id; const m = document.getElementById('ctx'); m.classList.add('show');
+  let x = e.clientX, y = e.clientY;
+  if (x + 185 > window.innerWidth) x = window.innerWidth - 190;
+  if (y + 270 > window.innerHeight) y = window.innerHeight - 275;
+  m.style.left = x + 'px'; m.style.top = y + 'px';
+}
+
+async function ctxMove(status) {
+  const t = tasks.find(x => x.id === ctxId);
+  if (t) { t.status = status; renderBoard(); toast('movido'); await dbUpsert(t); }
+  closeCtx();
+}
+
+async function ctxDelete() {
+  const id = ctxId;
+  tasks = tasks.filter(x => x.id !== id);
+  renderBoard(); closeCtx(); toast('excluído');
+  await dbDelete(id);
+}
+
+function closeCtx() { document.getElementById('ctx').classList.remove('show'); }
+
+// ─── Detail modal ─────────────────────────────────────────────────────────────
+function openDetail(id) {
+  detailId = id; const t = tasks.find(x => x.id === id); if (!t) return;
+  const ta = document.getElementById('detail-titulo'); ta.value = t.titulo; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+  document.getElementById('detail-desc').value = t.descricao || '';
+  document.getElementById('detail-status').value = t.status;
+  document.getElementById('detail-prio').value = t.prioridade;
+  document.getElementById('detail-date').value = t.prazo || '';
+  const cw = document.getElementById('detail-cats'); cw.innerHTML = '';
+  CATS.forEach(c => { const b = document.createElement('button'); b.className = 'pill' + (t.categorias?.includes(c) ? ' on-cat' : ''); b.textContent = c; b.onclick = () => b.classList.toggle('on-cat'); cw.appendChild(b); });
+  buildRespPills('detail-resps', t.responsaveis || [], 'detail');
+  renderChecklist(t);
+  const mrow = document.getElementById('detail-meta-row');
+  const pc = { alta: 'prio-alta', media: 'prio-media', baixa: 'prio-baixa' }[t.prioridade] || 'prio-media';
+  const pl = { alta: '↑ alta', media: '→ média', baixa: '↓ baixa' }[t.prioridade] || 'média';
+  const cats = (t.categorias || []).map(c => `<span class="tag tag-cat">${esc(c)}</span>`).join('');
+  const db2 = dateBadge(t.prazo);
+  mrow.innerHTML = `<span class="prio-badge ${pc}">${pl}</span>${cats}${db2}`;
+  document.getElementById('detail-bg').classList.add('show');
+}
+
+function renderChecklist(t) {
+  const list = document.getElementById('checklist'); list.innerHTML = '';
+  (t.checklist || []).forEach((item, i) => {
+    const row = document.createElement('div'); row.className = 'check-item';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = item.done;
+    cb.onchange = () => { item.done = cb.checked; inp.classList.toggle('done', item.done); };
+    const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'check-item-text' + (item.done ? ' done' : '');
+    inp.value = item.text; inp.onchange = () => item.text = inp.value;
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('check-input').focus(); } };
+    const del = document.createElement('button'); del.className = 'check-item-del'; del.textContent = '✕';
+    del.onclick = () => { t.checklist.splice(i, 1); renderChecklist(t); };
+    row.append(cb, inp, del); list.appendChild(row);
+  });
+}
+
+function addCheckItem() {
+  const inp = document.getElementById('check-input'); const text = inp.value.trim(); if (!text) return;
+  const t = tasks.find(x => x.id === detailId); if (!t) return;
+  if (!t.checklist) t.checklist = [];
+  t.checklist.push({ text, done: false }); renderChecklist(t); inp.value = ''; inp.focus();
+}
+
+async function saveDetail() {
+  const t = tasks.find(x => x.id === detailId); if (!t) return closeDetail();
+  const titulo = document.getElementById('detail-titulo').value.trim(); if (titulo) t.titulo = titulo;
+  t.descricao = document.getElementById('detail-desc').value;
+  t.status = document.getElementById('detail-status').value;
+  t.prioridade = document.getElementById('detail-prio').value;
+  t.prazo = document.getElementById('detail-date').value || '';
+  const cats = [...document.getElementById('detail-cats').querySelectorAll('.pill.on-cat')].map(b => b.textContent);
+  if (cats.length) t.categorias = cats;
+  t.responsaveis = [...document.getElementById('detail-resps').querySelectorAll('.pill.on-resp')].map(b => b.textContent);
+  renderBoard(); closeDetail(); toast('salvo');
+  await dbUpsert(t);
+}
+
+async function detailDelete() {
+  if (!confirm('Excluir esta tarefa?')) return;
+  const id = detailId;
+  tasks = tasks.filter(x => x.id !== id);
+  renderBoard(); closeDetail(); toast('excluído');
+  await dbDelete(id);
+}
+
+function closeDetail() { document.getElementById('detail-bg').classList.remove('show'); }
+
+// ─── Global listeners ─────────────────────────────────────────────────────────
+document.addEventListener('click', e => {
+  if (!document.getElementById('ctx').contains(e.target)) closeCtx();
+  if (e.target === document.getElementById('detail-bg')) closeDetail();
+});
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function exportTasks() {
+  const STATUS_LABEL = { validacao: 'Validação', backlog: 'Backlog', ideacao: 'Ideação', doing: 'Em Andamento', blocked: 'Bloqueado', done: 'Concluído', cancelled: 'Cancelado' };
+  const PRIO_LABEL = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+
+  const fmtPrazo = val => {
+    if (!val) return '';
+    const d = new Date(val + 'T00:00:00');
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const fmtCriado = val => {
+    const d = val ? new Date(Number(val)) : new Date();
+    return isNaN(d.getTime()) ? new Date().toLocaleDateString('pt-BR') : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const rows = tasks.map(t => ({
+    'Título': t.titulo || '',
+    'Status': STATUS_LABEL[t.status] || t.status || '',
+    'Prioridade': PRIO_LABEL[t.prioridade] || t.prioridade || '',
+    'Categorias': (t.categorias || []).join(', '),
+    'Responsáveis': (t.responsaveis || []).join(', '),
+    'Prazo': fmtPrazo(t.prazo),
+    'Criado em': fmtCriado(t.criado),
+    'Descrição': t.descricao || '',
+    'Checklist': (t.checklist || []).map(c => (c.done ? '✓' : '✗') + ' ' + c.text).join(' | '),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 40 }, // Título
+    { wch: 15 }, // Status
+    { wch: 12 }, // Prioridade
+    { wch: 30 }, // Categorias
+    { wch: 25 }, // Responsáveis
+    { wch: 12 }, // Prazo
+    { wch: 12 }, // Criado em
+    { wch: 50 }, // Descrição
+    { wch: 40 }, // Checklist
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tarefas');
+  XLSX.writeFile(wb, 'crm-tasks-export.xlsx');
+  toast('exportado');
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let tt;
+function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2000); }
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
