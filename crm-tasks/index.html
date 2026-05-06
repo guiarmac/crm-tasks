@@ -215,6 +215,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   <div class="filters-wrap">
     <input type="text" id="search-input" placeholder="🔍 buscar tarefas..." autocomplete="off" oninput="renderBoard()" style="padding:4px 12px;border:1px solid var(--border-md);border-radius:20px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;min-width:180px;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-md)'">
     <div class="filters" id="filters"></div>
+    <input type="date" id="filter-date-from" title="de" style="padding:2px 8px;border:1px solid var(--border-md);border-radius:20px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;cursor:pointer">
+    <span style="font-size:11px;font-family:var(--mono);color:var(--text-3)">→</span>
+    <input type="date" id="filter-date-to" title="até" style="padding:2px 8px;border:1px solid var(--border-md);border-radius:20px;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;cursor:pointer">
     <button class="btn-clear-filter" id="btn-clear-filter" onclick="clearFilter()">✕ limpar filtro</button>
   </div>
   <div class="board">
@@ -441,6 +444,8 @@ async function loadAndInit() {
     document.getElementById('check-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCheckItem(); });
     const ta = document.getElementById('detail-titulo');
     ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+    document.getElementById('filter-date-from').addEventListener('input', onCustomDateChange);
+    document.getElementById('filter-date-to').addEventListener('input', onCustomDateChange);
   }
 }
 
@@ -522,6 +527,13 @@ function setFilter(cat) {
   renderBoard();
 }
 
+function onCustomDateChange() {
+  activeDateFilter = 'custom';
+  document.querySelectorAll('[data-date]').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-clear-filter').classList.add('show');
+  renderBoard();
+}
+
 function setDateFilter(val) {
   if (activeDateFilter === val) {
     activeDateFilter = 'todos';
@@ -539,6 +551,8 @@ function clearFilter() {
   activeDateFilter = 'todos';
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === 'todos'));
   document.querySelectorAll('[data-date]').forEach(b => b.classList.remove('active'));
+  const df = document.getElementById('filter-date-from'); if (df) df.value = '';
+  const dt = document.getElementById('filter-date-to'); if (dt) dt.value = '';
   document.getElementById('btn-clear-filter').classList.remove('show');
   renderBoard();
 }
@@ -554,6 +568,21 @@ function fuzzyMatch(str, query) {
 
 function applyDateFilter(list) {
   if (activeDateFilter === 'todos') return list;
+  if (activeDateFilter === 'custom') {
+    const from = document.getElementById('filter-date-from')?.value;
+    const to = document.getElementById('filter-date-to')?.value;
+    if (!from && !to) return list;
+    const dFrom = from ? new Date(from + 'T00:00:00') : null;
+    const dTo = to ? new Date(to + 'T00:00:00') : null;
+    return list.filter(t => {
+      if (!t.prazo) return false;
+      const d = new Date(t.prazo + 'T00:00:00');
+      if (dFrom && dTo) return d >= dFrom && d <= dTo;
+      if (dFrom) return d >= dFrom;
+      if (dTo) return d <= dTo;
+      return true;
+    });
+  }
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const in7 = new Date(today); in7.setDate(today.getDate() + 7);
   return list.filter(t => {
