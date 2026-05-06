@@ -634,7 +634,9 @@ function closeCtx() { document.getElementById('ctx').classList.remove('show'); }
 // ─── Detail modal ─────────────────────────────────────────────────────────────
 function openDetail(id) {
   detailId = id; const t = tasks.find(x => x.id === id); if (!t) return;
-  const ta = document.getElementById('detail-titulo'); ta.value = t.titulo; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+  const ta = document.getElementById('detail-titulo');
+  ta.removeAttribute('readonly'); ta.removeAttribute('disabled');
+  ta.value = t.titulo || ''; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
   document.getElementById('detail-desc').value = t.descricao || '';
   document.getElementById('detail-status').value = t.status;
   document.getElementById('detail-prio').value = t.prioridade;
@@ -676,7 +678,8 @@ function addCheckItem() {
 
 async function saveDetail() {
   const t = tasks.find(x => x.id === detailId); if (!t) return closeDetail();
-  const titulo = document.getElementById('detail-titulo').value.trim(); if (titulo) t.titulo = titulo;
+  const titulo = document.getElementById('detail-titulo').value.trim();
+  if (titulo) t.titulo = titulo;
   t.descricao = document.getElementById('detail-desc').value;
   t.status = document.getElementById('detail-status').value;
   t.prioridade = document.getElementById('detail-prio').value;
