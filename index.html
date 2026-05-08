@@ -739,7 +739,8 @@ function filtered() {
 }
 
 // ─── Board render ─────────────────────────────────────────────────────────────
-function dateBadge(prazo) {
+function dateBadge(prazo, status) {
+  if (status === 'done' || status === 'cancelled') return '';
   if (!prazo) return '';
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = new Date(prazo + 'T00:00:00');
@@ -788,7 +789,7 @@ function makeCard(t) {
   const resps = t.responsaveis || [];
   let avHtml = '';
   if (resps.length) { avHtml = '<span style="display:inline-flex;margin-left:2px">'; resps.forEach((r, i) => { avHtml += `<span class="avatar ${RESP_AVATAR[r] || 'av-g'}" style="margin-left:${i === 0 ? 0 : -5}px" title="${r}">${RESP_INITIALS[r] || r[0]}</span>`; }); avHtml += '</span>'; }
-  const db2 = dateBadge(t.prazo);
+  const db2 = dateBadge(t.prazo, t.status);
   d.innerHTML = `<div class="task-title">${esc(t.titulo)}</div>${descPrev}<div class="task-foot"><span class="prio-badge ${pc}">${pl}</span>${cats}${checkBadge}${db2}${avHtml}</div>`;
   return d;
 }
@@ -862,7 +863,7 @@ function openDetail(id) {
   const pc = { alta: 'prio-alta', media: 'prio-media', baixa: 'prio-baixa' }[t.prioridade] || 'prio-media';
   const pl = { alta: '↑ alta', media: '→ média', baixa: '↓ baixa' }[t.prioridade] || 'média';
   const cats = (t.categorias || []).map(c => `<span class="tag tag-cat">${esc(c)}</span>`).join('');
-  const db2 = dateBadge(t.prazo);
+  const db2 = dateBadge(t.prazo, t.status);
   mrow.innerHTML = `<span class="prio-badge ${pc}">${pl}</span>${cats}${db2}`;
   document.getElementById('detail-bg').classList.add('show');
 }
