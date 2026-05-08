@@ -82,7 +82,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .btn-clear-filter.show{display:inline-flex;align-items:center;gap:4px}
 
 /* BOARD */
-.board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}
 .col{background:var(--surface2);border-radius:var(--r);padding:11px;min-height:260px;transition:background .15s}
 .col.drag-over{background:color-mix(in srgb,var(--surface2) 60%,var(--blue) 40%)}
 .col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
@@ -262,6 +262,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
       <div class="col" id="drop-backlog" data-status="backlog"><div class="col-hdr"><span class="col-title">backlog</span><span class="col-cnt" id="cnt-backlog">0</span></div><div id="col-backlog"></div><div class="col-empty" id="emp-backlog">—</div></div>
       <div class="col" id="drop-ideacao" data-status="ideacao"><div class="col-hdr"><span class="col-title">ideação</span><span class="col-cnt" id="cnt-ideacao">0</span></div><div id="col-ideacao"></div><div class="col-empty" id="emp-ideacao">—</div></div>
       <div class="col" id="drop-doing" data-status="doing"><div class="col-hdr"><span class="col-title">em andamento</span><span class="col-cnt" id="cnt-doing">0</span></div><div id="col-doing"></div><div class="col-empty" id="emp-doing">—</div></div>
+      <div class="col" id="drop-homologacao" data-status="homologacao"><div class="col-hdr"><span class="col-title">homologação</span><span class="col-cnt" id="cnt-homologacao">0</span></div><div id="col-homologacao"></div><div class="col-empty" id="emp-homologacao">—</div></div>
       <div class="col" id="drop-blocked" data-status="blocked"><div class="col-hdr"><span class="col-title">bloqueado</span><span class="col-cnt" id="cnt-blocked">0</span></div><div id="col-blocked"></div><div class="col-empty" id="emp-blocked">—</div></div>
       <div class="col" id="drop-done" data-status="done"><div class="col-hdr"><span class="col-title">concluído</span><span class="col-cnt" id="cnt-done">0</span></div><div id="col-done"></div><div class="col-empty" id="emp-done">—</div></div>
       <div class="col" id="drop-cancelled" data-status="cancelled"><div class="col-hdr"><span class="col-title">cancelado</span><span class="col-cnt" id="cnt-cancelled">0</span></div><div id="col-cancelled"></div><div class="col-empty" id="emp-cancelled">—</div></div>
@@ -287,6 +288,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   <div class="ctx-item" onclick="ctxMove('backlog')">backlog</div>
   <div class="ctx-item" onclick="ctxMove('ideacao')">ideação</div>
   <div class="ctx-item" onclick="ctxMove('doing')">em andamento</div>
+  <div class="ctx-item" onclick="ctxMove('homologacao')">homologação</div>
   <div class="ctx-item" onclick="ctxMove('blocked')">bloqueado</div>
   <div class="ctx-item" onclick="ctxMove('done')">concluído</div>
   <div class="ctx-item" onclick="ctxMove('cancelled')">cancelado</div>
@@ -326,6 +328,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
             <option value="backlog">backlog</option>
             <option value="ideacao">ideação</option>
             <option value="doing">em andamento</option>
+            <option value="homologacao">homologação</option>
             <option value="blocked">bloqueado</option>
             <option value="done">concluído</option>
             <option value="cancelled">cancelado</option>
@@ -376,7 +379,7 @@ const CATS = ['CRM','Rental','Seminovos','Financeiro','Jurídico','Integrações
 const RESPS = ['Guilherme','Geovany','Samara','Karine','Nexforce'];
 const RESP_AVATAR = {Guilherme:'av-g',Geovany:'av-ge',Samara:'av-s',Karine:'av-k',Nexforce:'av-n'};
 const RESP_INITIALS = {Guilherme:'GU',Geovany:'GE',Samara:'SA',Karine:'KA',Nexforce:'NX'};
-const STATUS_LABEL = {validacao:'Validação',backlog:'Backlog',ideacao:'Ideação',doing:'Em Andamento',blocked:'Bloqueado',done:'Concluído',cancelled:'Cancelado'};
+const STATUS_LABEL = {validacao:'Validação',backlog:'Backlog',ideacao:'Ideação',doing:'Em Andamento',homologacao:'Homologação',blocked:'Bloqueado',done:'Concluído',cancelled:'Cancelado'};
 
 // Mapeamento de email → avatar para o log
 // SQL para criar a tabela activity_log no Supabase:
@@ -752,7 +755,7 @@ function dateBadge(prazo, status) {
 }
 
 function renderBoard() {
-  const cols = { validacao: [], ideacao: [], backlog: [], doing: [], blocked: [], done: [], cancelled: [] };
+  const cols = { validacao: [], ideacao: [], backlog: [], doing: [], homologacao: [], blocked: [], done: [], cancelled: [] };
   filtered().forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
   Object.entries(cols).forEach(([status, items]) => {
     const col = document.getElementById('col-' + status);
