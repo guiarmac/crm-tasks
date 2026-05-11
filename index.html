@@ -294,6 +294,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   <div class="ctx-item" onclick="ctxMove('cancelled')">cancelado</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item" onclick="openDetail(ctxId)">ver detalhes</div>
+  <div class="ctx-item" onclick="ctxClone()">clonar tarefa</div>
   <div class="ctx-item danger" onclick="ctxDelete()">excluir</div>
 </div>
 
@@ -358,6 +359,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
     </div>
     <div class="detail-footer">
       <button class="btn-sm danger" onclick="detailDelete()">excluir tarefa</button>
+      <button class="btn-sm" onclick="detailClone()">clonar</button>
       <div style="display:flex;gap:8px">
         <button class="btn-sm" onclick="closeDetail()">cancelar</button>
         <button class="btn-sm save" onclick="saveDetail()">salvar</button>
@@ -846,6 +848,16 @@ async function ctxDelete() {
   await logAction(id, titulo, 'excluiu', null, null, null);
 }
 
+async function ctxClone() {
+  const orig = tasks.find(x => x.id === ctxId);
+  if (!orig) return;
+  const nova = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
+  tasks.push(nova);
+  renderBoard(); closeCtx(); toast('tarefa clonada');
+  await dbUpsert(nova);
+  await logAction(nova.id, nova.titulo, 'criou', null, null, null);
+}
+
 function closeCtx() { document.getElementById('ctx').classList.remove('show'); }
 
 // ─── Detail modal ─────────────────────────────────────────────────────────────
@@ -942,6 +954,16 @@ async function detailDelete() {
   renderBoard(); closeDetail(); toast('excluído');
   await dbDelete(id);
   await logAction(id, titulo, 'excluiu', null, null, null);
+}
+
+async function detailClone() {
+  const orig = tasks.find(x => x.id === detailId);
+  if (!orig) return;
+  const nova = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
+  tasks.push(nova);
+  renderBoard(); closeDetail(); toast('tarefa clonada');
+  await dbUpsert(nova);
+  await logAction(nova.id, nova.titulo, 'criou', null, null, null);
 }
 
 function closeDetail() { document.getElementById('detail-bg').classList.remove('show'); }
