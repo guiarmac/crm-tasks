@@ -398,6 +398,7 @@ const STATUS_LABEL = {validacao:'Validação',backlog:'Backlog',ideacao:'Ideaç�
 // );
 // alter table activity_log enable row level security;
 // create policy "public access" on activity_log for all using (true) with check (true);
+// -- ALTER TABLE activity_log ADD COLUMN responsaveis jsonb;
 const EMAIL_MAP = {
   'guilherme.souza@armac.com.br':  {initials:'GU', cls:'av-g',  name:'Guilherme'},
   'geovany.pereira@armac.com.br':  {initials:'GE', cls:'av-ge', name:'Geovany'},
@@ -812,7 +813,7 @@ function setupDrop() {
       if (t && t.status !== status) {
         const oldStatus = t.status;
         t.status = status; renderBoard(); toast('movido'); await dbUpsert(t);
-        await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status]);
+        await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status], t.responsaveis);
       }
       dragId = null;
     });
@@ -833,7 +834,7 @@ async function ctxMove(status) {
   if (t) {
     const oldStatus = t.status;
     t.status = status; renderBoard(); toast('movido'); await dbUpsert(t);
-    await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status]);
+    await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status], t.responsaveis);
   }
   closeCtx();
 }
@@ -934,7 +935,7 @@ async function saveDetail() {
   if (titulo && titulo !== oldTitulo) logOps.push(logAction(t.id, t.titulo, 'alterou', 'título', oldTitulo, titulo));
   if (t.prioridade !== oldPrio) logOps.push(logAction(t.id, t.titulo, 'alterou', 'prioridade', oldPrio, t.prioridade));
   if (t.prazo !== oldPrazo) logOps.push(logAction(t.id, t.titulo, 'alterou', 'prazo', oldPrazo || '—', t.prazo || '—'));
-  if (t.status !== oldStatus) logOps.push(logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[t.status]));
+  if (t.status !== oldStatus) logOps.push(logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[t.status], t.responsaveis));
   const newResps = t.responsaveis || [];
   if (JSON.stringify([...newResps].sort()) !== JSON.stringify([...oldResps].sort()))
     logOps.push(logAction(t.id, t.titulo, 'alterou', 'responsáveis', oldResps.join(', ') || '—', newResps.join(', ') || '—'));
@@ -969,7 +970,7 @@ async function detailClone() {
 function closeDetail() { document.getElementById('detail-bg').classList.remove('show'); }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function renderDashboard() {
+async function renderDashboard() {
   const grid = document.getElementById('dash-grid');
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const total = tasks.length;
@@ -1044,11 +1045,63 @@ function renderDashboard() {
   }).join('') || `<span style="font-size:12px;color:var(--text-3);font-family:var(--mono)">—</span>`;
   html += `<div class="dash-card dash-card-wide"><div class="dash-card-title">por categoria (top 5)</div>${catBars}</div>`;
 
+  // 8–10. Conclusões por semana, mês e responsável (dados do log)
+  const { data: logData } = await db.from('activity_log')
+    .select('task_id, created_at, new_value, responsaveis')
+    .eq('action', 'moveu')
+    .eq('field', 'status')
+    .order('created_at', { ascending: true });
+
+  const lastMoveMap = {};
+  (logData || []).forEach(r => { lastMoveMap[r.task_id] = r; });
+  const conclusoes = Object.values(lastMoveMap).filter(r => r.new_value === 'Concluído');
+
+  // Por semana (últimas 8)
+  const todayC = new Date(); todayC.setHours(0,0,0,0);
+  const getMonday = d => { const c = new Date(d); c.setHours(0,0,0,0); const day = c.getDay(); c.setDate(c.getDate() + (day === 0 ? -6 : 1 - day)); return c; };
+  const thisMon = getMonday(todayC);
+  const weekKeys = [];
+  for (let i = 7; i >= 0; i--) { const ws = new Date(thisMon); ws.setDate(ws.getDate() - i * 7); weekKeys.push(ws.toISOString().slice(0,10)); }
+  const weekMap = {}; weekKeys.forEach(k => weekMap[k] = 0);
+  conclusoes.forEach(r => { const mon = getMonday(new Date(r.created_at)).toISOString().slice(0,10); if (mon in weekMap) weekMap[mon]++; });
+  const maxWeek = Math.max(...weekKeys.map(k => weekMap[k]), 1);
+  const weekBarsHtml = weekKeys.map(k => {
+    const cnt = weekMap[k]; const w = Math.round(cnt / maxWeek * 100);
+    const lbl = new Date(k + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'});
+    return `<div class="bar-row"><span class="bar-label">${lbl}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:var(--green)"></div></div><span class="bar-count">${cnt}</span></div>`;
+  }).join('');
+  html += `<div class="dash-card"><div class="dash-card-title">conclusões por semana</div>${weekBarsHtml}</div>`;
+
+  // Por mês (últimos 6)
+  const MONTH_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const monthKeys = [];
+  for (let i = 5; i >= 0; i--) { const d = new Date(todayC.getFullYear(), todayC.getMonth()-i, 1); monthKeys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }
+  const monthMap = {}; monthKeys.forEach(k => monthMap[k] = 0);
+  conclusoes.forEach(r => { const d = new Date(r.created_at); const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; if (key in monthMap) monthMap[key]++; });
+  const maxMonth = Math.max(...monthKeys.map(k => monthMap[k]), 1);
+  const monthBarsHtml = monthKeys.map(k => {
+    const cnt = monthMap[k]; const w = Math.round(cnt / maxMonth * 100);
+    const lbl = MONTH_PT[parseInt(k.split('-')[1])-1];
+    return `<div class="bar-row"><span class="bar-label">${lbl}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:var(--green)"></div></div><span class="bar-count">${cnt}</span></div>`;
+  }).join('');
+  html += `<div class="dash-card"><div class="dash-card-title">conclusões por mês</div>${monthBarsHtml}</div>`;
+
+  // Por responsável
+  const respConc = {};
+  conclusoes.forEach(r => { (r.responsaveis || []).forEach(resp => { respConc[resp] = (respConc[resp] || 0) + 1; }); });
+  const respConcEntries = Object.entries(respConc).sort((a,b) => b[1]-a[1]);
+  const maxRespConc = respConcEntries.length ? respConcEntries[0][1] : 1;
+  const respConcBars = respConcEntries.map(([r, cnt]) => {
+    const w = Math.round(cnt / maxRespConc * 100);
+    return `<div class="bar-row"><span class="bar-label" style="display:flex;align-items:center;gap:5px;width:120px"><span class="avatar ${RESP_AVATAR[r]||'av-g'}" style="border:none">${RESP_INITIALS[r]||r[0]}</span>${r}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:var(--green)"></div></div><span class="bar-count">${cnt}</span></div>`;
+  }).join('') || `<span style="font-size:12px;color:var(--text-3);font-family:var(--mono)">—</span>`;
+  html += `<div class="dash-card"><div class="dash-card-title">conclusões por responsável</div>${respConcBars}</div>`;
+
   grid.innerHTML = html;
 }
 
 // ─── Activity log ─────────────────────────────────────────────────────────────
-async function logAction(taskId, taskTitulo, action, field, oldValue, newValue) {
+async function logAction(taskId, taskTitulo, action, field, oldValue, newValue, responsaveis) {
   try {
     await db.from('activity_log').insert({
       task_id: taskId,
@@ -1058,6 +1111,7 @@ async function logAction(taskId, taskTitulo, action, field, oldValue, newValue) 
       field: field || null,
       old_value: oldValue || null,
       new_value: newValue || null,
+      responsaveis: responsaveis || null,
     });
   } catch (_) { /* silently fail */ }
 }
