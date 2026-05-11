@@ -420,7 +420,7 @@ const EMAIL_MAP = {
 const SEED = [{"id":"t01","titulo":"novo fluxo inbound rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000001,"descricao":"","checklist":[],"prazo":""},{"id":"t02","titulo":"corrigir proposta comercial rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000002,"descricao":"","checklist":[],"prazo":""},{"id":"t03","titulo":"m&a braslift","categorias":["CRM"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"backlog","criado":1700000003,"descricao":"","checklist":[],"prazo":""},{"id":"t04","titulo":"lead & deal score","categorias":["Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000004,"descricao":"","checklist":[],"prazo":""},{"id":"t05","titulo":"reformular rfm","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000005,"descricao":"","checklist":[],"prazo":""},{"id":"t06","titulo":"atendimento IA - wave 2","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000006,"descricao":"","checklist":[],"prazo":""},{"id":"t07","titulo":"ativação goiânia (15/05)","categorias":["CRM","Seminovos","Rental","Marketing"],"prioridade":"media","responsaveis":["Guilherme","Samara"],"status":"backlog","criado":1700000007,"descricao":"","checklist":[],"prazo":"2025-05-15"},{"id":"t08","titulo":"scorecard crédito","categorias":["Financeiro","Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000008,"descricao":"","checklist":[],"prazo":""},{"id":"t09","titulo":"montar treinamento hubspot","categorias":["CRM","Rental","Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000009,"descricao":"","checklist":[],"prazo":""},{"id":"t10","titulo":"criação de pipeline para frota","categorias":["Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000010,"descricao":"","checklist":[],"prazo":""},{"id":"t11","titulo":"criação dash pré-vendas","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Geovany","Guilherme"],"status":"backlog","criado":1700000011,"descricao":"","checklist":[],"prazo":""},{"id":"t12","titulo":"aplicar plano de vôo no painel de carteiras","categorias":["CRM","Rental","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000012,"descricao":"","checklist":[],"prazo":""},{"id":"t13","titulo":"ajuste fluxo crédito e jurídico (grandes contas)","categorias":["CRM","Rental","Financeiro","Jurídico"],"prioridade":"media","responsaveis":["Samara"],"status":"backlog","criado":1700000013,"descricao":"gerar ticket do crédito e jurídico","checklist":[],"prazo":""},{"id":"t14","titulo":"incluir nps do painel de carteiras","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000014,"descricao":"","checklist":[],"prazo":""},{"id":"t15","titulo":"migrar painel de nps bi -> dominio armac","categorias":["CRM","Rental","Seminovos","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000015,"descricao":"","checklist":[],"prazo":""},{"id":"t16","titulo":"adicionar prospects carteira spot","categorias":["Rental"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000016,"descricao":"","checklist":[],"prazo":""},{"id":"t17","titulo":"atualização automática de preço médio","categorias":["Seminovos","CRM","Integrações"],"prioridade":"media","responsaveis":["Guilherme","Geovany"],"status":"backlog","criado":1700000017,"descricao":"","checklist":[],"prazo":""},{"id":"t18","titulo":"docusign","categorias":["CRM","Rental","Seminovos","Financeiro","Jurídico","Integrações"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"doing","criado":1700000018,"descricao":"","checklist":[],"prazo":""},{"id":"t19","titulo":"m&a termov","categorias":["CRM"],"prioridade":"alta","responsaveis":["Nexforce","Guilherme"],"status":"doing","criado":1700000019,"descricao":"","checklist":[],"prazo":""},{"id":"t20","titulo":"nps armac mai/26","categorias":["CRM"],"prioridade":"media","responsaveis":["Samara"],"status":"doing","criado":1700000020,"descricao":"","checklist":[],"prazo":""},{"id":"t21","titulo":"configuração acessos mario biolchini","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000021,"descricao":"","checklist":[],"prazo":""},{"id":"t22","titulo":"migrar empresas para o mario biolchini","categorias":["Rental","CRM"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000022,"descricao":"","checklist":[],"prazo":""}];
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let tasks = [], selCats = [], selPrio = 'alta', selComp = 'media', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', ctxId = null, detailId = null, dragId = null;
+let tasks = [], selCats = [], selPrio = 'alta', selComp = 'media', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', ctxId = null, detailId = null, dragId = null, pendingCloneId = null;
 let dropSetup = false;
 let currentUserEmail = null;
 let logOffset = 0;
@@ -872,14 +872,14 @@ async function ctxDelete() {
   await logAction(id, titulo, 'excluiu', null, null, null);
 }
 
-async function ctxClone() {
+function ctxClone() {
   const orig = tasks.find(x => x.id === ctxId);
   if (!orig) return;
-  const nova = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
-  tasks.push(nova);
-  renderBoard(); closeCtx(); toast('tarefa clonada');
-  await dbUpsert(nova);
-  await logAction(nova.id, nova.titulo, 'criou', null, null, null);
+  const clone = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
+  tasks.push(clone);
+  pendingCloneId = clone.id;
+  renderBoard(); closeCtx();
+  openDetail(clone.id);
 }
 
 function closeCtx() { document.getElementById('ctx').classList.remove('show'); }
@@ -953,6 +953,16 @@ async function saveDetail() {
   const cats = [...document.getElementById('detail-cats').querySelectorAll('.pill.on-cat')].map(b => b.textContent);
   if (cats.length) t.categorias = cats;
   t.responsaveis = [...document.getElementById('detail-resps').querySelectorAll('.pill.on-resp')].map(b => b.textContent);
+
+  // Clone novo — salvar como criação
+  if (pendingCloneId) {
+    pendingCloneId = null;
+    renderBoard(); closeDetail(); toast('tarefa criada');
+    await dbUpsert(t);
+    await logAction(t.id, t.titulo, 'criou', null, null, null, t.responsaveis);
+    return;
+  }
+
   renderBoard(); closeDetail(); toast('salvo');
   await dbUpsert(t);
 
@@ -984,17 +994,24 @@ async function detailDelete() {
   await logAction(id, titulo, 'excluiu', null, null, null);
 }
 
-async function detailClone() {
+function detailClone() {
   const orig = tasks.find(x => x.id === detailId);
   if (!orig) return;
-  const nova = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
-  tasks.push(nova);
-  renderBoard(); closeDetail(); toast('tarefa clonada');
-  await dbUpsert(nova);
-  await logAction(nova.id, nova.titulo, 'criou', null, null, null);
+  const clone = { ...orig, id: uid(), criado: Date.now(), status: 'validacao', titulo: '[cópia] ' + orig.titulo };
+  tasks.push(clone);
+  pendingCloneId = clone.id;
+  renderBoard();
+  openDetail(clone.id);
 }
 
-function closeDetail() { document.getElementById('detail-bg').classList.remove('show'); }
+function closeDetail() {
+  if (pendingCloneId) {
+    tasks = tasks.filter(x => x.id !== pendingCloneId);
+    pendingCloneId = null;
+    renderBoard();
+  }
+  document.getElementById('detail-bg').classList.remove('show');
+}
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 async function renderDashboard() {
