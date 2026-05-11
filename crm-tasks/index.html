@@ -104,6 +104,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .prio-alta{background:var(--red-bg);color:var(--red)}
 .prio-media{background:var(--amber-bg);color:var(--amber)}
 .prio-baixa{background:var(--green-bg);color:var(--green)}
+.comp-badge{font-size:9px;font-family:var(--mono);font-weight:500;padding:1px 6px;border-radius:20px;white-space:nowrap;letter-spacing:.03em}
+.comp-alta{background:var(--red-bg);color:var(--red)}.comp-media{background:var(--amber-bg);color:var(--amber)}.comp-baixa{background:var(--green-bg);color:var(--green)}
 .date-badge{font-size:10px;font-family:var(--mono);color:var(--text-3);white-space:nowrap}
 .date-badge.overdue{color:var(--red)}
 .date-badge.soon{color:var(--amber)}
@@ -246,6 +248,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
       <div class="form-meta">
         <div class="meta-group"><div class="meta-label">categorias</div><div class="meta-pills" id="cat-pills"></div></div>
         <div class="meta-group"><div class="meta-label">prioridade</div><div class="meta-pills" id="prio-pills"></div></div>
+        <div class="meta-group"><div class="meta-label">complexidade</div><div class="meta-pills" id="comp-pills"></div></div>
         <div class="meta-group"><div class="meta-label">responsáveis</div><div class="meta-pills" id="resp-pills"></div></div>
       </div>
     </div>
@@ -343,6 +346,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
             <option value="baixa">baixa</option>
           </select>
         </div>
+        <div class="detail-section" style="flex:1;min-width:120px">
+          <span class="detail-section-label">complexidade</span>
+          <select class="detail-select" id="detail-comp" style="width:100%">
+            <option value="alta">alta</option>
+            <option value="media">média</option>
+            <option value="baixa">baixa</option>
+          </select>
+        </div>
         <div class="detail-section" style="flex:1;min-width:140px">
           <span class="detail-section-label">prazo</span>
           <input type="date" class="detail-date-input" id="detail-date">
@@ -409,7 +420,7 @@ const EMAIL_MAP = {
 const SEED = [{"id":"t01","titulo":"novo fluxo inbound rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000001,"descricao":"","checklist":[],"prazo":""},{"id":"t02","titulo":"corrigir proposta comercial rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000002,"descricao":"","checklist":[],"prazo":""},{"id":"t03","titulo":"m&a braslift","categorias":["CRM"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"backlog","criado":1700000003,"descricao":"","checklist":[],"prazo":""},{"id":"t04","titulo":"lead & deal score","categorias":["Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000004,"descricao":"","checklist":[],"prazo":""},{"id":"t05","titulo":"reformular rfm","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000005,"descricao":"","checklist":[],"prazo":""},{"id":"t06","titulo":"atendimento IA - wave 2","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000006,"descricao":"","checklist":[],"prazo":""},{"id":"t07","titulo":"ativação goiânia (15/05)","categorias":["CRM","Seminovos","Rental","Marketing"],"prioridade":"media","responsaveis":["Guilherme","Samara"],"status":"backlog","criado":1700000007,"descricao":"","checklist":[],"prazo":"2025-05-15"},{"id":"t08","titulo":"scorecard crédito","categorias":["Financeiro","Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000008,"descricao":"","checklist":[],"prazo":""},{"id":"t09","titulo":"montar treinamento hubspot","categorias":["CRM","Rental","Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000009,"descricao":"","checklist":[],"prazo":""},{"id":"t10","titulo":"criação de pipeline para frota","categorias":["Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000010,"descricao":"","checklist":[],"prazo":""},{"id":"t11","titulo":"criação dash pré-vendas","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Geovany","Guilherme"],"status":"backlog","criado":1700000011,"descricao":"","checklist":[],"prazo":""},{"id":"t12","titulo":"aplicar plano de vôo no painel de carteiras","categorias":["CRM","Rental","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000012,"descricao":"","checklist":[],"prazo":""},{"id":"t13","titulo":"ajuste fluxo crédito e jurídico (grandes contas)","categorias":["CRM","Rental","Financeiro","Jurídico"],"prioridade":"media","responsaveis":["Samara"],"status":"backlog","criado":1700000013,"descricao":"gerar ticket do crédito e jurídico","checklist":[],"prazo":""},{"id":"t14","titulo":"incluir nps do painel de carteiras","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000014,"descricao":"","checklist":[],"prazo":""},{"id":"t15","titulo":"migrar painel de nps bi -> dominio armac","categorias":["CRM","Rental","Seminovos","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000015,"descricao":"","checklist":[],"prazo":""},{"id":"t16","titulo":"adicionar prospects carteira spot","categorias":["Rental"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000016,"descricao":"","checklist":[],"prazo":""},{"id":"t17","titulo":"atualização automática de preço médio","categorias":["Seminovos","CRM","Integrações"],"prioridade":"media","responsaveis":["Guilherme","Geovany"],"status":"backlog","criado":1700000017,"descricao":"","checklist":[],"prazo":""},{"id":"t18","titulo":"docusign","categorias":["CRM","Rental","Seminovos","Financeiro","Jurídico","Integrações"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"doing","criado":1700000018,"descricao":"","checklist":[],"prazo":""},{"id":"t19","titulo":"m&a termov","categorias":["CRM"],"prioridade":"alta","responsaveis":["Nexforce","Guilherme"],"status":"doing","criado":1700000019,"descricao":"","checklist":[],"prazo":""},{"id":"t20","titulo":"nps armac mai/26","categorias":["CRM"],"prioridade":"media","responsaveis":["Samara"],"status":"doing","criado":1700000020,"descricao":"","checklist":[],"prazo":""},{"id":"t21","titulo":"configuração acessos mario biolchini","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000021,"descricao":"","checklist":[],"prazo":""},{"id":"t22","titulo":"migrar empresas para o mario biolchini","categorias":["Rental","CRM"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000022,"descricao":"","checklist":[],"prazo":""}];
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let tasks = [], selCats = [], selPrio = 'alta', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', ctxId = null, detailId = null, dragId = null;
+let tasks = [], selCats = [], selPrio = 'alta', selComp = 'media', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', ctxId = null, detailId = null, dragId = null;
 let dropSetup = false;
 let currentUserEmail = null;
 let logOffset = 0;
@@ -526,6 +537,7 @@ async function loadAndInit() {
 
   buildCatPills();
   buildPrioPills();
+  buildCompPills();
   buildRespPills('resp-pills', selResps, 'form');
   buildFilters();
   renderBoard();
@@ -574,6 +586,15 @@ function buildPrioPills() {
   });
 }
 
+function buildCompPills() {
+  const w = document.getElementById('comp-pills'); w.innerHTML = '';
+  [['alta','alta'],['media','média'],['baixa','baixa']].forEach(([p, label]) => {
+    const b = document.createElement('button'); b.className = 'pill' + (p === selComp ? ' on-' + p : ''); b.textContent = label; b.dataset.comp = p;
+    b.onclick = () => { selComp = p; document.querySelectorAll('#comp-pills .pill').forEach(x => x.className = 'pill' + (x.dataset.comp === p ? ' on-' + p : '')); };
+    w.appendChild(b);
+  });
+}
+
 function buildRespPills(containerId, selectedArr, mode) {
   const w = document.getElementById(containerId); w.innerHTML = '';
   RESPS.forEach(r => {
@@ -591,10 +612,10 @@ function buildRespPills(containerId, selectedArr, mode) {
 async function addTask() {
   const titulo = document.getElementById('titulo-input').value.trim();
   if (!titulo) { document.getElementById('titulo-input').focus(); return; }
-  const t = { id: uid(), titulo, categorias: [...selCats], prioridade: selPrio, responsaveis: [...selResps], status: 'validacao', criado: Date.now(), descricao: '', checklist: [], prazo: '' };
+  const t = { id: uid(), titulo, categorias: [...selCats], prioridade: selPrio, complexidade: selComp, responsaveis: [...selResps], status: 'validacao', criado: Date.now(), descricao: '', checklist: [], prazo: '' };
   tasks.push(t);
-  document.getElementById('titulo-input').value = ''; selCats = []; selResps = [];
-  buildCatPills(); buildRespPills('resp-pills', selResps, 'form');
+  document.getElementById('titulo-input').value = ''; selCats = []; selComp = 'media'; selResps = [];
+  buildCatPills(); buildCompPills(); buildRespPills('resp-pills', selResps, 'form');
   renderBoard(); toast('tarefa adicionada');
   await dbUpsert(t);
   await logAction(t.id, t.titulo, 'criou', null, null, null);
@@ -796,7 +817,9 @@ function makeCard(t) {
   let avHtml = '';
   if (resps.length) { avHtml = '<span style="display:inline-flex;margin-left:2px">'; resps.forEach((r, i) => { avHtml += `<span class="avatar ${RESP_AVATAR[r] || 'av-g'}" style="margin-left:${i === 0 ? 0 : -5}px" title="${r}">${RESP_INITIALS[r] || r[0]}</span>`; }); avHtml += '</span>'; }
   const db2 = dateBadge(t.prazo, t.status);
-  d.innerHTML = `<div class="task-title">${esc(t.titulo)}</div>${descPrev}<div class="task-foot"><span class="prio-badge ${pc}">${pl}</span>${cats}${checkBadge}${db2}${avHtml}</div>`;
+  const cc = { alta: 'comp-alta', media: 'comp-media', baixa: 'comp-baixa' }[t.complexidade || 'media'] || 'comp-media';
+  const cl = { alta: '◆◆◆ alta', media: '◆◆ média', baixa: '◆ baixa' }[t.complexidade || 'media'] || '◆◆ média';
+  d.innerHTML = `<div class="task-title">${esc(t.titulo)}</div>${descPrev}<div class="task-foot"><span class="prio-badge ${pc}">${pl}</span><span class="comp-badge ${cc}">${cl}</span>${cats}${checkBadge}${db2}${avHtml}</div>`;
   return d;
 }
 
@@ -870,6 +893,7 @@ function openDetail(id) {
   document.getElementById('detail-desc').value = t.descricao || '';
   document.getElementById('detail-status').value = t.status;
   document.getElementById('detail-prio').value = t.prioridade;
+  document.getElementById('detail-comp').value = t.complexidade || 'media';
   document.getElementById('detail-date').value = t.prazo || '';
   const cw = document.getElementById('detail-cats'); cw.innerHTML = '';
   CATS.forEach(c => { const b = document.createElement('button'); b.className = 'pill' + (t.categorias?.includes(c) ? ' on-cat' : ''); b.textContent = c; b.onclick = () => b.classList.toggle('on-cat'); cw.appendChild(b); });
@@ -912,6 +936,7 @@ async function saveDetail() {
   // Capturar valores anteriores
   const oldTitulo = t.titulo;
   const oldPrio = t.prioridade;
+  const oldComp = t.complexidade || 'media';
   const oldPrazo = t.prazo || '';
   const oldResps = [...(t.responsaveis || [])];
   const oldCats = [...(t.categorias || [])];
@@ -923,6 +948,7 @@ async function saveDetail() {
   t.descricao = document.getElementById('detail-desc').value;
   t.status = document.getElementById('detail-status').value;
   t.prioridade = document.getElementById('detail-prio').value;
+  t.complexidade = document.getElementById('detail-comp').value;
   t.prazo = document.getElementById('detail-date').value || '';
   const cats = [...document.getElementById('detail-cats').querySelectorAll('.pill.on-cat')].map(b => b.textContent);
   if (cats.length) t.categorias = cats;
@@ -934,6 +960,7 @@ async function saveDetail() {
   const logOps = [];
   if (titulo && titulo !== oldTitulo) logOps.push(logAction(t.id, t.titulo, 'alterou', 'título', oldTitulo, titulo));
   if (t.prioridade !== oldPrio) logOps.push(logAction(t.id, t.titulo, 'alterou', 'prioridade', oldPrio, t.prioridade));
+  if (t.complexidade !== oldComp) logOps.push(logAction(t.id, t.titulo, 'alterou', 'complexidade', oldComp, t.complexidade, t.responsaveis));
   if (t.prazo !== oldPrazo) logOps.push(logAction(t.id, t.titulo, 'alterou', 'prazo', oldPrazo || '—', t.prazo || '—'));
   if (t.status !== oldStatus) logOps.push(logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[t.status], t.responsaveis));
   const newResps = t.responsaveis || [];
@@ -1016,6 +1043,17 @@ async function renderDashboard() {
       <div style="display:flex;align-items:center;justify-content:space-between"><span class="prio-badge prio-alta">↑ alta</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${prioCounts.alta}</span></div>
       <div style="display:flex;align-items:center;justify-content:space-between"><span class="prio-badge prio-media">→ média</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${prioCounts.media}</span></div>
       <div style="display:flex;align-items:center;justify-content:space-between"><span class="prio-badge prio-baixa">↓ baixa</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${prioCounts.baixa}</span></div>
+    </div>
+  </div>`;
+
+  // 4b. Por complexidade
+  const compCounts = {alta:0,media:0,baixa:0};
+  tasks.forEach(t => { const c = t.complexidade || 'media'; if (c in compCounts) compCounts[c]++; });
+  html += `<div class="dash-card"><div class="dash-card-title">por complexidade</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between"><span class="comp-badge comp-alta">◆◆◆ alta</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${compCounts.alta}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between"><span class="comp-badge comp-media">◆◆ média</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${compCounts.media}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between"><span class="comp-badge comp-baixa">◆ baixa</span><span style="font-family:var(--mono);font-size:16px;font-weight:500">${compCounts.baixa}</span></div>
     </div>
   </div>`;
 
@@ -1210,6 +1248,7 @@ function exportTasks() {
     'Título': t.titulo || '',
     'Status': STATUS_LABEL[t.status] || t.status || '',
     'Prioridade': PRIO_LABEL[t.prioridade] || t.prioridade || '',
+    'Complexidade': PRIO_LABEL[t.complexidade || 'media'] || t.complexidade || '',
     'Categorias': (t.categorias || []).join(', '),
     'Responsáveis': (t.responsaveis || []).join(', '),
     'Prazo': fmtPrazo(t.prazo),
