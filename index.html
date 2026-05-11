@@ -450,7 +450,7 @@ const EMAIL_MAP = {
 const SEED = [{"id":"t01","titulo":"novo fluxo inbound rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000001,"descricao":"","checklist":[],"prazo":""},{"id":"t02","titulo":"corrigir proposta comercial rental","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"backlog","criado":1700000002,"descricao":"","checklist":[],"prazo":""},{"id":"t03","titulo":"m&a braslift","categorias":["CRM"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"backlog","criado":1700000003,"descricao":"","checklist":[],"prazo":""},{"id":"t04","titulo":"lead & deal score","categorias":["Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000004,"descricao":"","checklist":[],"prazo":""},{"id":"t05","titulo":"reformular rfm","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000005,"descricao":"","checklist":[],"prazo":""},{"id":"t06","titulo":"atendimento IA - wave 2","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000006,"descricao":"","checklist":[],"prazo":""},{"id":"t07","titulo":"ativação goiânia (15/05)","categorias":["CRM","Seminovos","Rental","Marketing"],"prioridade":"media","responsaveis":["Guilherme","Samara"],"status":"backlog","criado":1700000007,"descricao":"","checklist":[],"prazo":"2025-05-15"},{"id":"t08","titulo":"scorecard crédito","categorias":["Financeiro","Rental","Seminovos","CRM"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000008,"descricao":"","checklist":[],"prazo":""},{"id":"t09","titulo":"montar treinamento hubspot","categorias":["CRM","Rental","Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000009,"descricao":"","checklist":[],"prazo":""},{"id":"t10","titulo":"criação de pipeline para frota","categorias":["Seminovos"],"prioridade":"media","responsaveis":["Guilherme"],"status":"backlog","criado":1700000010,"descricao":"","checklist":[],"prazo":""},{"id":"t11","titulo":"criação dash pré-vendas","categorias":["Pré-Vendas"],"prioridade":"media","responsaveis":["Geovany","Guilherme"],"status":"backlog","criado":1700000011,"descricao":"","checklist":[],"prazo":""},{"id":"t12","titulo":"aplicar plano de vôo no painel de carteiras","categorias":["CRM","Rental","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000012,"descricao":"","checklist":[],"prazo":""},{"id":"t13","titulo":"ajuste fluxo crédito e jurídico (grandes contas)","categorias":["CRM","Rental","Financeiro","Jurídico"],"prioridade":"media","responsaveis":["Samara"],"status":"backlog","criado":1700000013,"descricao":"gerar ticket do crédito e jurídico","checklist":[],"prazo":""},{"id":"t14","titulo":"incluir nps do painel de carteiras","categorias":["CRM","Rental"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000014,"descricao":"","checklist":[],"prazo":""},{"id":"t15","titulo":"migrar painel de nps bi -> dominio armac","categorias":["CRM","Rental","Seminovos","Integrações","IA"],"prioridade":"media","responsaveis":["Geovany","Samara"],"status":"backlog","criado":1700000015,"descricao":"","checklist":[],"prazo":""},{"id":"t16","titulo":"adicionar prospects carteira spot","categorias":["Rental"],"prioridade":"media","responsaveis":["Geovany"],"status":"backlog","criado":1700000016,"descricao":"","checklist":[],"prazo":""},{"id":"t17","titulo":"atualização automática de preço médio","categorias":["Seminovos","CRM","Integrações"],"prioridade":"media","responsaveis":["Guilherme","Geovany"],"status":"backlog","criado":1700000017,"descricao":"","checklist":[],"prazo":""},{"id":"t18","titulo":"docusign","categorias":["CRM","Rental","Seminovos","Financeiro","Jurídico","Integrações"],"prioridade":"alta","responsaveis":["Guilherme","Nexforce"],"status":"doing","criado":1700000018,"descricao":"","checklist":[],"prazo":""},{"id":"t19","titulo":"m&a termov","categorias":["CRM"],"prioridade":"alta","responsaveis":["Nexforce","Guilherme"],"status":"doing","criado":1700000019,"descricao":"","checklist":[],"prazo":""},{"id":"t20","titulo":"nps armac mai/26","categorias":["CRM"],"prioridade":"media","responsaveis":["Samara"],"status":"doing","criado":1700000020,"descricao":"","checklist":[],"prazo":""},{"id":"t21","titulo":"configuração acessos mario biolchini","categorias":["CRM","Rental"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000021,"descricao":"","checklist":[],"prazo":""},{"id":"t22","titulo":"migrar empresas para o mario biolchini","categorias":["Rental","CRM"],"prioridade":"alta","responsaveis":["Guilherme"],"status":"done","criado":1700000022,"descricao":"","checklist":[],"prazo":""}];
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let tasks = [], selCats = [], selPrio = 'alta', selComp = 'media', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', ctxId = null, detailId = null, dragId = null, pendingCloneId = null;
+let tasks = [], selCats = [], selPrio = 'alta', selComp = 'media', selResps = [], activeFilter = 'todos', activeDateFilter = 'todos', activePrioFilter = 'todos', activeCompFilter = 'todos', ctxId = null, detailId = null, dragId = null, pendingCloneId = null;
 let dropSetup = false;
 let currentUserEmail = null;
 let logOffset = 0;
@@ -488,7 +488,7 @@ async function doLogout() {
   await db.auth.signOut();
   tasks = [];
   currentUserEmail = null;
-  selCats = []; selResps = []; activeFilter = 'todos'; activeDateFilter = 'todos'; activePrioFilter = 'todos';
+  selCats = []; selResps = []; activeFilter = 'todos'; activeDateFilter = 'todos'; activePrioFilter = 'todos'; activeCompFilter = 'todos';
   showLogin();
 }
 
@@ -679,6 +679,12 @@ function buildFilters() {
     b.onclick = () => setPrioFilter(prio); w.appendChild(b);
   });
   const sep3 = document.createElement('span'); sep3.className = 'filter-sep'; w.appendChild(sep3);
+  [['◆ baixa','baixa'],['◆◆ média','media'],['◆◆◆ alta','alta']].forEach(([label, comp]) => {
+    const b = document.createElement('button'); b.className = 'filter-btn'; b.textContent = label; b.dataset.comp = comp;
+    if (activeCompFilter === comp) applyCompStyle(b, comp);
+    b.onclick = () => setCompFilter(comp); w.appendChild(b);
+  });
+  const sep4 = document.createElement('span'); sep4.className = 'filter-sep'; w.appendChild(sep4);
   mkDateBtn('vencido', 'vencido');
   mkDateBtn('hoje', 'hoje');
   mkDateBtn('7 dias', '7dias');
@@ -707,7 +713,34 @@ function setPrioFilter(prio) {
     activePrioFilter = prio;
     document.querySelectorAll('[data-prio]').forEach(b => { clearPrioStyle(b); if (b.dataset.prio === prio) applyPrioStyle(b, prio); });
   }
-  const anyActive = activeFilter !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos';
+  const anyActive = activeFilter !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos' || activeCompFilter !== 'todos';
+  document.getElementById('btn-clear-filter').classList.toggle('show', anyActive);
+  renderBoard();
+}
+
+function applyCompStyle(btn, comp) {
+  const styles = {
+    alta:  {bg:'var(--red-bg)',  color:'var(--red)',   border:'var(--red)'},
+    media: {bg:'var(--amber-bg)',color:'var(--amber)', border:'var(--amber)'},
+    baixa: {bg:'var(--green-bg)',color:'var(--green)', border:'var(--green)'},
+  };
+  const s = styles[comp]; if (!s) return;
+  btn.style.background = s.bg; btn.style.color = s.color; btn.style.borderColor = s.border;
+}
+
+function clearCompStyle(btn) {
+  btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+}
+
+function setCompFilter(comp) {
+  if (activeCompFilter === comp) {
+    activeCompFilter = 'todos';
+    document.querySelectorAll('[data-comp]').forEach(b => clearCompStyle(b));
+  } else {
+    activeCompFilter = comp;
+    document.querySelectorAll('[data-comp]').forEach(b => { clearCompStyle(b); if (b.dataset.comp === comp) applyCompStyle(b, comp); });
+  }
+  const anyActive = activeFilter !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos' || activeCompFilter !== 'todos';
   document.getElementById('btn-clear-filter').classList.toggle('show', anyActive);
   renderBoard();
 }
@@ -716,7 +749,7 @@ function setFilter(cat) {
   if (activeFilter === cat) { clearFilter(); return; }
   activeFilter = cat;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-  const anyActive = cat !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos';
+  const anyActive = cat !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos' || activeCompFilter !== 'todos';
   document.getElementById('btn-clear-filter').classList.toggle('show', anyActive);
   renderBoard();
 }
@@ -736,7 +769,7 @@ function setDateFilter(val) {
     activeDateFilter = val;
     document.querySelectorAll('[data-date]').forEach(b => b.classList.toggle('active', b.dataset.date === val));
   }
-  const anyActive = activeFilter !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos';
+  const anyActive = activeFilter !== 'todos' || activeDateFilter !== 'todos' || activePrioFilter !== 'todos' || activeCompFilter !== 'todos';
   document.getElementById('btn-clear-filter').classList.toggle('show', anyActive);
   renderBoard();
 }
@@ -745,9 +778,11 @@ function clearFilter() {
   activeFilter = 'todos';
   activeDateFilter = 'todos';
   activePrioFilter = 'todos';
+  activeCompFilter = 'todos';
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === 'todos'));
   document.querySelectorAll('[data-date]').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('[data-prio]').forEach(b => clearPrioStyle(b));
+  document.querySelectorAll('[data-comp]').forEach(b => clearCompStyle(b));
   const df = document.getElementById('filter-date-from'); if (df) df.value = '';
   const dt = document.getElementById('filter-date-to'); if (dt) dt.value = '';
   document.getElementById('btn-clear-filter').classList.remove('show');
@@ -798,6 +833,7 @@ function filtered() {
   let base = activeFilter === 'todos' ? tasks : activeFilter.startsWith('@') ? tasks.filter(t => t.responsaveis?.includes(activeFilter.slice(1))) : tasks.filter(t => t.categorias?.includes(activeFilter));
   if (query) base = base.filter(t => fuzzyMatch(t.titulo, query) || fuzzyMatch((t.descricao || ''), query) || (t.categorias || []).some(c => fuzzyMatch(c, query)) || (t.responsaveis || []).some(r => fuzzyMatch(r, query)));
   if (activePrioFilter !== 'todos') base = base.filter(t => t.prioridade === activePrioFilter);
+  if (activeCompFilter !== 'todos') base = base.filter(t => (t.complexidade || 'media') === activeCompFilter);
   return applyDateFilter(base);
 }
 
