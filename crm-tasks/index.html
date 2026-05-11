@@ -406,6 +406,7 @@ const RESPS = ['Guilherme','Geovany','Samara','Karine','Nexforce'];
 const RESP_AVATAR = {Guilherme:'av-g',Geovany:'av-ge',Samara:'av-s',Karine:'av-k',Nexforce:'av-n'};
 const RESP_INITIALS = {Guilherme:'GU',Geovany:'GE',Samara:'SA',Karine:'KA',Nexforce:'NX'};
 const STATUS_LABEL = {validacao:'Validação',backlog:'Backlog',ideacao:'Ideação',doing:'Em Andamento',homologacao:'Homologação',blocked:'Bloqueado',done:'Concluído',cancelled:'Cancelado'};
+const GESTOR_EMAIL = 'guilherme.souza@armac.com.br';
 
 // Mapeamento de email → avatar para o log
 // SQL para criar a tabela activity_log no Supabase:
@@ -872,6 +873,7 @@ function setupDrop() {
         const oldStatus = t.status;
         t.status = status; renderBoard(); toast('movido'); await dbUpsert(t);
         await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status], t.responsaveis);
+        if (status === 'done') notifyGestor(t);
       }
       dragId = null;
     });
@@ -893,6 +895,7 @@ async function ctxMove(status) {
     const oldStatus = t.status;
     t.status = status; renderBoard(); toast('movido'); await dbUpsert(t);
     await logAction(t.id, t.titulo, 'moveu', 'status', STATUS_LABEL[oldStatus], STATUS_LABEL[status], t.responsaveis);
+    if (status === 'done') notifyGestor(t);
   }
   closeCtx();
 }
@@ -996,6 +999,7 @@ async function saveDetail() {
     await dbUpsert(t);
     await logAction(t.id, t.titulo, 'criou', null, null, null, t.responsaveis);
     createNotifications(t, [], t.responsaveis, '', t.prazo);
+    if (t.status === 'done' && oldStatus !== 'done') notifyGestor(t);
     return;
   }
 
@@ -1018,6 +1022,7 @@ async function saveDetail() {
   if ((t.descricao || '') !== oldDesc) logOps.push(logAction(t.id, t.titulo, 'alterou', 'descrição', null, null));
   await Promise.all(logOps);
   createNotifications(t, oldResps, t.responsaveis, oldPrazo, t.prazo);
+  if (t.status === 'done' && oldStatus !== 'done') notifyGestor(t);
 }
 
 async function detailDelete() {
@@ -1285,6 +1290,11 @@ const RESP_EMAIL = {
   Karine:    'karine.silva@armac.com.br',
 };
 
+async function notifyGestor(task) {
+  if (!currentUserEmail || currentUserEmail === GESTOR_EMAIL) return;
+  await db.from('notifications').insert({ to_email: GESTOR_EMAIL, from_email: currentUserEmail, type: 'concluido', task_id: task.id, task_titulo: task.titulo, prazo: null });
+}
+
 async function createNotifications(task, oldResps, newResps, oldPrazo, newPrazo) {
   if (!currentUserEmail) return;
   const ops = [];
@@ -1333,6 +1343,8 @@ async function loadNotifications() {
     } else if (n.type === 'prazo_alterado') {
       const pf = n.prazo ? new Date(n.prazo+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
       msg = `<strong>${em.name}</strong> alterou o prazo de <em>${esc(n.task_titulo||'')}</em> para ${pf}`;
+    } else if (n.type === 'concluido') {
+      msg = `<strong>${em.name}</strong> moveu a tarefa <em>${esc(n.task_titulo||'')}</em> para Concluído`;
     }
     const bg = n.read ? '' : 'background:var(--bg);';
     return `<div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;${bg}display:flex;align-items:flex-start;gap:10px" onclick="clickNotif('${n.id}','${n.task_id}')">
